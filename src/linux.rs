@@ -1,3 +1,5 @@
+use std::collections::VecDeque;
+
 use super::*;
 
 lazy_static::lazy_static!
@@ -23,6 +25,7 @@ pub struct Window
     /* Internals */
     resizable: bool,
     mode: WindowMode,
+    event_queue: VecDeque<Event>,
 
     /* Platform-specific data */
     display: *mut x11_dl::xlib::Display,
@@ -36,7 +39,35 @@ impl Window
 {
     pub fn poll_events(&mut self) -> Option<Event>
     {
-        todo!()
+        let mut xevent = x11_dl::xlib::XEvent { pad: [0;24] };
+
+        while unsafe { (XLIB.XPending)(self.display) } != 0
+        {
+            unsafe { (XLIB.XNextEvent)(self.display, &mut xevent); }
+            self.process_xevent(&xevent);
+        }
+
+        self.event_queue.pop_back()
+    }
+
+    fn process_xevent(&mut self, xevent: &x11_dl::xlib::XEvent)
+    {
+        match xevent.get_type()
+        {
+            x11_dl::xlib::KeyPress =>
+            {
+                self.event_queue.push_front(Event::KeyPress { key: Key::A });
+            },
+            x11_dl::xlib::KeyRelease =>
+            {
+                self.event_queue.push_front(Event::KeyRelease { key: Key::A });
+            },
+            x11_dl::xlib::DestroyNotify =>
+            {
+                self.event_queue.push_front(Event::Quit);
+            },
+            _ => {}
+        };
     }
 
     fn set_window_mode(&mut self, mode: WindowMode)
@@ -114,6 +145,7 @@ pub fn create_window(create_info: &WindowCreateInfo) -> Window
         events: Vec::new(),
         resizable: create_info.resizable,
         mode: create_info.mode,
+        event_queue: VecDeque::new(),
         display,
         x11_fd: fd,
         root,
