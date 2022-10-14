@@ -45,3 +45,48 @@ pub fn init()
 {
     todo!()
 }
+
+pub fn create_window(create_info: &WindowCreateInfo) -> Window
+{
+    todo!()
+}
+
+pub fn get_performance_counter() -> u64
+{
+    todo!()
+}
+
+pub fn get_performance_frequency() -> u64
+{
+    todo!()
+}
+
+pub fn get_ticks() -> u64
+{
+    todo!()
+}
+
+pub fn delay(ms: u32)
+{
+    todo!()
+}
+
+pub fn get_cpu_count() -> i32
+{
+    todo!()
+}
+
+pub fn get_system_memory() -> SystemMemory
+{
+    todo!()
+}
+
+pub fn get_power_info() -> PowerInfo
+{
+    todo!()
+}
+
+pub fn vk_get_surface_extension() -> &'static str
+{
+    todo!()
+}
