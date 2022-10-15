@@ -1,5 +1,7 @@
 use std::collections::VecDeque;
 
+use libc::{timeval, timespec, clock_gettime, CLOCK_MONOTONIC};
+
 use super::*;
 
 lazy_static::lazy_static!
@@ -83,6 +85,12 @@ impl Window
 
 /* Public platform functions */
 
+static mut start_tv: timeval = timeval { tv_sec: 0, tv_usec: 0 };
+static mut timer_started: bool = false;
+
+static mut COUNTER_START: u64 = 0;
+static mut COUNTER_FREQUENCY: u64 = 0;
+
 pub fn get_name() -> &'static str
 {
     "Linux"
@@ -90,7 +98,8 @@ pub fn get_name() -> &'static str
 
 pub fn init()
 {
-    todo!()
+    unsafe { COUNTER_START = get_performance_counter(); }
+    unsafe { COUNTER_FREQUENCY = get_performance_frequency(); }
 }
 
 pub fn create_window(create_info: &WindowCreateInfo) -> Window
@@ -156,17 +165,29 @@ pub fn create_window(create_info: &WindowCreateInfo) -> Window
 
 pub fn get_performance_counter() -> u64
 {
-    todo!()
+    let mut now: timespec = timespec { tv_nsec: 0, tv_sec: 0 };
+    unsafe { clock_gettime(CLOCK_MONOTONIC as _, &mut now) };
+    let mut ticks: u64 = now.tv_sec as _;
+    ticks *= 1000000000;
+    ticks += now.tv_nsec as u64;
+
+    ticks
 }
 
 pub fn get_performance_frequency() -> u64
 {
-    todo!()
+    1000000000
 }
 
 pub fn get_ticks() -> u64
 {
-    todo!()
+    let mut now = get_performance_counter();
+
+    now -= unsafe { COUNTER_START };
+    now *= 1000;
+    now /= unsafe { COUNTER_FREQUENCY };
+
+    now
 }
 
 pub fn delay(ms: u32)
