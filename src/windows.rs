@@ -314,6 +314,14 @@ pub struct Window
 
 impl Window
 {
+    pub fn update_input_state(&mut self)
+    {
+        for i in 0..self.keys_current.len()
+        {
+            self.keys_previous[i] = self.keys_current[i];
+        }
+    }
+
     pub fn poll_events(&mut self) -> Option<Event>
     {
         let mut event: Option<Event> = None;
@@ -351,9 +359,7 @@ impl Window
                         if msg.wParam == VK_CAPITAL as _ { self.key_modifiers.caps = state == 1; }
                         let modifiers: KeyModifiers = self.key_modifiers;
 
-                        self.keys_previous[key as usize] = self.keys_current[key as usize];
                         self.keys_current[key as usize] = if state == 1 { true } else { false };
-                        // TODO(quigly): fix this shit above ^      (is_key_pressed is always firing as pressed when key is down)
                         
                         event = Some(Event::Key { key, state, modifiers });
                     },
