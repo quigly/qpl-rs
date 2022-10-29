@@ -928,6 +928,12 @@ pub fn init()
 
 pub fn create_window(create_info: &WindowCreateInfo) -> Window
 {
+    let monitor_width: i32 = unsafe { GetSystemMetrics(SM_CXSCREEN) };
+    let monitor_height: i32 = unsafe { GetSystemMetrics(SM_CYSCREEN) };
+
+    let x: i32 = if create_info.x == WINDOW_POS_CENTER { (monitor_width / 2) - ((create_info.width as i32) / 2) } else { create_info.x };
+    let y: i32 = if create_info.y == WINDOW_POS_CENTER { (monitor_height / 2) - ((create_info.height as i32) / 2) } else { create_info.y };
+
     let mut window_rect = RECT
     {
         left: 0 as LONG,
@@ -954,6 +960,8 @@ pub fn create_window(create_info: &WindowCreateInfo) -> Window
         hinstance,
         std::ptr::null_mut()
     )};
+
+    unsafe { SetWindowPos(handle, 0 as _, x, y, 0, 0, SWP_NOSIZE); }
 
     unsafe { AdjustWindowRect(&mut window_rect, WS_OVERLAPPEDWINDOW, FALSE); }
 

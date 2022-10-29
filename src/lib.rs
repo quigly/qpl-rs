@@ -15,6 +15,8 @@ mod linux;
 #[cfg(target_os = "linux")]
 pub use linux::*;
 
+pub const WINDOW_POS_CENTER: i32 = 0xB00B5;
+
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Key
 {
@@ -208,6 +210,8 @@ pub enum Event
 #[derive(Debug, Copy, Clone)]
 pub struct WindowCreateInfo<'a>
 {
+	pub x: i32,
+	pub y: i32,
     pub width: u32,
     pub height: u32,
     pub title: &'a str,
@@ -221,6 +225,8 @@ impl Default for WindowCreateInfo<'_>
 	{
 		Self
 		{
+			x: WINDOW_POS_CENTER,
+			y: WINDOW_POS_CENTER,
 			width: 1280,
 			height: 720,
 			title: "Game",
