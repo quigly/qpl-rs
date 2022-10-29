@@ -1,3 +1,10 @@
+/* TODO:
+
+- Controller mapping enum
+- Controller type enum
+
+*/
+
 #[cfg(target_os = "windows")]
 mod windows;
 #[cfg(target_os = "windows")]

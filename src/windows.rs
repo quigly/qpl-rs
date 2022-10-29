@@ -1,3 +1,11 @@
+/* TODO:
+
+- XInput controller support
+- DirectInput controller support
+
+
+*/
+
 use super::*;
 
 use libc::*;
