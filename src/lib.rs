@@ -230,8 +230,42 @@ impl Default for WindowCreateInfo<'_>
 	}
 }
 
+pub struct GLContextCreateInfo
+{
+    pub version: (u8, u8),
+    pub red_bits: u8,
+    pub green_bits: u8,
+    pub blue_bits: u8,
+    pub alpha_bits: u8,
+    pub depth_bits: u8,
+    pub stencil_bits: u8,
+    pub samples: Option<u8>,
+	pub double_buffer: bool,
+	pub vsync: bool
+}
+
+impl Default for GLContextCreateInfo
+{
+	fn default() -> Self
+	{
+		Self
+		{
+			version: (3, 2),
+			red_bits: 8,
+			green_bits: 8,
+			blue_bits: 8,
+			alpha_bits: 8,
+			depth_bits: 24,
+			stencil_bits: 8,
+			samples: None,
+			double_buffer: true,
+			vsync: false
+		}	
+	}
+}
+
 #[derive(Debug)]
-pub enum GlError
+pub enum GLError
 {
     InvalidWindowHandle,
     VersionNotSupported,

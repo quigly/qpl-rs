@@ -33,6 +33,266 @@ use std::os::windows::ffi::*;
 
 use std::mem::size_of;
 
+const KEYCODES: [Key; 256] =
+[
+    Key::Unknown, // 0 (0x00)
+    Key::Unknown, // 1 (0x01)
+    Key::Unknown, // 2 (0x02)
+    Key::Unknown, // 3 (0x03)
+    Key::Unknown, // 4 (0x04)
+    Key::Unknown, // 5 (0x05)
+    Key::Unknown, // 6 (0x06)
+    Key::Unknown, // 7 (0x07)
+    Key::Unknown, // 8 (0x08)
+    Key::Unknown, // 9 (0x09)
+    Key::Unknown, // 10 (0x0A)
+    Key::Unknown, // 11 (0x0B)
+    Key::Minus, // 12 (0x0C)
+    Key::Equals, // 13 (0x0D)
+    Key::Backspace, // 14 (0x0E)
+    Key::Unknown, // 15 (0x0F)
+    Key::Q, // 16 (0x10)
+    Key::W, // 17 (0x11)
+    Key::E, // 18 (0x12)
+    Key::R, // 19 (0x13)
+    Key::T, // 20 (0x14)
+    Key::Y, // 21 (0x15)
+    Key::U, // 22 (0x16)
+    Key::I, // 23 (0x17)
+    Key::O, // 24 (0x18)
+    Key::P, // 25 (0x19)
+    Key::LeftBracket, // 26 (0x1A)
+    Key::RightBracket, // 27 (0x1B)
+    Key::Unknown, // 28 (0x1C)
+    Key::Unknown, // 29 (0x1D)
+    Key::A, // 30 (0x1E)
+    Key::S, // 31 (0x1F)
+    Key::D, // 32 (0x20)
+    Key::F, // 33 (0x21)
+    Key::G, // 34 (0x22)
+    Key::H, // 35 (0x23)
+    Key::J, // 36 (0x24)
+    Key::Unknown, // 37 (0x25)
+    Key::L, // 38 (0x26)
+    Key::Semicolon, // 39 (0x27)
+    Key::Apostrophe, // 40 (0x28)
+    Key::Grave, // 41 (0x29)
+    Key::Unknown, // 42 (0x2A)
+    Key::Backslash, // 43 (0x2B)
+    Key::Z, // 44 (0x2C)
+    Key::X, // 45 (0x2D)
+    Key::C, // 46 (0x2E)
+    Key::V, // 47 (0x2F)
+    Key::B, // 48 (0x30)
+    Key::N, // 49 (0x31)
+    Key::M, // 50 (0x32)
+    Key::Comma, // 51 (0x33)
+    Key::Period, // 52 (0x34)
+    Key::Slash, // 53 (0x35)
+    Key::Unknown, // 54 (0x36)
+    Key::Unknown, // 55 (0x37)
+    Key::Unknown, // 56 (0x38)
+    Key::Unknown, // 57 (0x39)
+    Key::Unknown, // 58 (0x3A)
+    Key::Unknown, // 59 (0x3B)
+    Key::Unknown, // 60 (0x3C)
+    Key::Unknown, // 61 (0x3D)
+    Key::Unknown, // 62 (0x3E)
+    Key::Unknown, // 63 (0x3F)
+    Key::Unknown, // 64 (0x40)
+    Key::Unknown, // 65 (0x41)
+    Key::Unknown, // 66 (0x42)
+    Key::Unknown, // 67 (0x43)
+    Key::Unknown, // 68 (0x44)
+    Key::Unknown, // 69 (0x45)
+    Key::Unknown, // 70 (0x46)
+    Key::Unknown, // 71 (0x47)
+    Key::Unknown, // 72 (0x48)
+    Key::Unknown, // 73 (0x49)
+    Key::Unknown, // 74 (0x4A)
+    Key::Unknown, // 75 (0x4B)
+    Key::Unknown, // 76 (0x4C)
+    Key::Unknown, // 77 (0x4D)
+    Key::Unknown, // 78 (0x4E)
+    Key::Unknown, // 79 (0x4F)
+    Key::Unknown, // 80 (0x50)
+    Key::Unknown, // 81 (0x51)
+    Key::Unknown, // 82 (0x52)
+    Key::Unknown, // 83 (0x53)
+    Key::Unknown, // 84 (0x54)
+    Key::Unknown, // 85 (0x55)
+    Key::Unknown, // 86 (0x56) WORLD_2
+    Key::Unknown, // 87 (0x57)
+    Key::Unknown, // 88 (0x58)
+    Key::Unknown, // 89 (0x59)
+    Key::Unknown, // 90 (0x5A)
+    Key::Unknown, // 91 (0x5B)
+    Key::Unknown, // 92 (0x5C)
+    Key::Unknown, // 93 (0x5D)
+    Key::Unknown, // 94 (0x5E)
+    Key::Unknown, // 95 (0x5F)
+    Key::Unknown, // 96 (0x60)
+    Key::Unknown, // 97 (0x61)
+    Key::Unknown, // 98 (0x62)
+    Key::Unknown, // 99 (0x63)
+    Key::Unknown, // 100 (0x64)
+    Key::Unknown, // 101 (0x65)
+    Key::Unknown, // 102 (0x66)
+    Key::Unknown, // 103 (0x67)
+    Key::Unknown, // 104 (0x68)
+    Key::Unknown, // 105 (0x69)
+    Key::Unknown, // 106 (0x6A)
+    Key::Unknown, // 107 (0x6B)
+    Key::Unknown, // 108 (0x6C)
+    Key::Unknown, // 109 (0x6D)
+    Key::Unknown, // 110 (0x6E)
+    Key::Unknown, // 111 (0x6F)
+    Key::Unknown, // 112 (0x70)
+    Key::Unknown, // 113 (0x71)
+    Key::Unknown, // 114 (0x72)
+    Key::Unknown, // 115 (0x73)
+    Key::Unknown, // 116 (0x74)
+    Key::Unknown, // 117 (0x75)
+    Key::Unknown, // 118 (0x76)
+    Key::Unknown, // 119 (0x77)
+    Key::Unknown, // 120 (0x78)
+    Key::Unknown, // 121 (0x79)
+    Key::Unknown, // 122 (0x7A)
+    Key::Unknown, // 123 (0x7B)
+    Key::Unknown, // 124 (0x7C)
+    Key::Unknown, // 125 (0x7D)
+    Key::Unknown, // 126 (0x7E)
+    Key::Unknown, // 127 (0x7F)
+    Key::Unknown, // 128 (0x80)
+    Key::Unknown, // 129 (0x81)
+    Key::Unknown, // 130 (0x82)
+    Key::Unknown, // 131 (0x83)
+    Key::Unknown, // 132 (0x84)
+    Key::Unknown, // 133 (0x85)
+    Key::Unknown, // 134 (0x86)
+    Key::Unknown, // 135 (0x87)
+    Key::Unknown, // 136 (0x88)
+    Key::Unknown, // 137 (0x89)
+    Key::Unknown, // 138 (0x8A)
+    Key::Unknown, // 139 (0x8B)
+    Key::Unknown, // 140 (0x8C)
+    Key::Unknown, // 141 (0x8D)
+    Key::Unknown, // 142 (0x8E)
+    Key::Unknown, // 143 (0x8F)
+    Key::Unknown, // 144 (0x90)
+    Key::Unknown, // 145 (0x91)
+    Key::Unknown, // 146 (0x92)
+    Key::Unknown, // 147 (0x93)
+    Key::Unknown, // 148 (0x94)
+    Key::Unknown, // 149 (0x95)
+    Key::Unknown, // 150 (0x96)
+    Key::Unknown, // 151 (0x97)
+    Key::Unknown, // 152 (0x98)
+    Key::Unknown, // 153 (0x99)
+    Key::Unknown, // 154 (0x9A)
+    Key::Unknown, // 155 (0x9B)
+    Key::Unknown, // 156 (0x9C)
+    Key::Unknown, // 157 (0x9D)
+    Key::Unknown, // 158 (0x9E)
+    Key::Unknown, // 159 (0x9F)
+    Key::Unknown, // 160 (0xA0)
+    Key::Unknown, // 161 (0xA1)
+    Key::Unknown, // 162 (0xA2)
+    Key::Unknown, // 163 (0xA3)
+    Key::Unknown, // 164 (0xA4)
+    Key::Unknown, // 165 (0xA5)
+    Key::Unknown, // 166 (0xA6)
+    Key::Unknown, // 167 (0xA7)
+    Key::Unknown, // 168 (0xA8)
+    Key::Unknown, // 169 (0xA9)
+    Key::Unknown, // 170 (0xAA)
+    Key::Unknown, // 171 (0xAB)
+    Key::Unknown, // 172 (0xAC)
+    Key::Unknown, // 173 (0xAD)
+    Key::Unknown, // 174 (0xAE)
+    Key::Unknown, // 175 (0xAF)
+    Key::Unknown, // 176 (0xB0)
+    Key::Unknown, // 177 (0xB1)
+    Key::Unknown, // 178 (0xB2)
+    Key::Unknown, // 179 (0xB3)
+    Key::Unknown, // 180 (0xB4)
+    Key::Unknown, // 181 (0xB5)
+    Key::Unknown, // 182 (0xB6)
+    Key::Unknown, // 183 (0xB7)
+    Key::Unknown, // 184 (0xB8)
+    Key::Unknown, // 185 (0xB9)
+    Key::Unknown, // 186 (0xBA)
+    Key::Unknown, // 187 (0xBB)
+    Key::Unknown, // 188 (0xBC)
+    Key::Unknown, // 189 (0xBD)
+    Key::Unknown, // 190 (0xBE)
+    Key::Unknown, // 191 (0xBF)
+    Key::Unknown, // 192 (0xC0)
+    Key::Unknown, // 193 (0xC1)
+    Key::Unknown, // 194 (0xC2)
+    Key::Unknown, // 195 (0xC3)
+    Key::Unknown, // 196 (0xC4)
+    Key::Unknown, // 197 (0xC5)
+    Key::Unknown, // 198 (0xC6)
+    Key::Unknown, // 199 (0xC7)
+    Key::Unknown, // 200 (0xC8)
+    Key::Unknown, // 201 (0xC9)
+    Key::Unknown, // 202 (0xCA)
+    Key::Unknown, // 203 (0xCB)
+    Key::Unknown, // 204 (0xCC)
+    Key::Unknown, // 205 (0xCD)
+    Key::Unknown, // 206 (0xCE)
+    Key::Unknown, // 207 (0xCF)
+    Key::Unknown, // 208 (0xD0)
+    Key::Unknown, // 209 (0xD1)
+    Key::Unknown, // 210 (0xD2)
+    Key::Unknown, // 211 (0xD3)
+    Key::Unknown, // 212 (0xD4)
+    Key::Unknown, // 213 (0xD5)
+    Key::Unknown, // 214 (0xD6)
+    Key::Unknown, // 215 (0xD7)
+    Key::Unknown, // 216 (0xD8)
+    Key::Unknown, // 217 (0xD9)
+    Key::Unknown, // 218 (0xDA)
+    Key::Unknown, // 219 (0xDB)
+    Key::Unknown, // 220 (0xDC)
+    Key::Unknown, // 221 (0xDD)
+    Key::Unknown, // 222 (0xDE)
+    Key::Unknown, // 223 (0xDF)
+    Key::Unknown, // 224 (0xE0)
+    Key::Unknown, // 225 (0xE1)
+    Key::Unknown, // 226 (0xE2)
+    Key::Unknown, // 227 (0xE3)
+    Key::Unknown, // 228 (0xE4)
+    Key::Unknown, // 229 (0xE5)
+    Key::Unknown, // 230 (0xE6)
+    Key::Unknown, // 231 (0xE7)
+    Key::Unknown, // 232 (0xE8)
+    Key::Unknown, // 233 (0xE9)
+    Key::Unknown, // 234 (0xEA)
+    Key::Unknown, // 235 (0xEB)
+    Key::Unknown, // 236 (0xEC)
+    Key::Unknown, // 237 (0xED)
+    Key::Unknown, // 238 (0xEE)
+    Key::Unknown, // 239 (0xEF)
+    Key::Unknown, // 240 (0xF0)
+    Key::Unknown, // 241 (0xF1)
+    Key::Unknown, // 242 (0xF2)
+    Key::Unknown, // 243 (0xF3)
+    Key::Unknown, // 244 (0xF4)
+    Key::Unknown, // 245 (0xF5)
+    Key::Unknown, // 246 (0xF6)
+    Key::Unknown, // 247 (0xF7)
+    Key::Unknown, // 248 (0xF8)
+    Key::Unknown, // 249 (0xF9)
+    Key::Unknown, // 250 (0xFA)
+    Key::Unknown, // 251 (0xFB)
+    Key::Unknown, // 252 (0xFC)
+    Key::Unknown, // 253 (0xFD)
+    Key::Unknown, // 254 (0xFE)
+    Key::Unknown // 255 (0xFF)
+];
+
 fn win32_convert_scancode_to_key(scancode: u32) -> Option<Key>
 {
     match scancode
@@ -210,6 +470,13 @@ extern "system" fn gl_debug_message_callback(
 		error_type, severity, message_str);
 }
 
+pub struct GLContext
+{
+    hdc: HDC,
+    hglrc: HGLRC,
+    gl_library: HMODULE
+}
+
 /* Internal functions */
 
 fn win32_to_wstring(str: &str) -> Vec<u16>
@@ -268,16 +535,23 @@ unsafe extern "system" fn win32_window_proc(h_wnd: HWND, msg: UINT, w_param: WPA
     }
     else if msg == WM_CLOSE
 	{
+		//println!("window_proc WM_CLOSE");
 		DestroyWindow(h_wnd);
 		return 0;
 	}
     else if msg == WM_QUIT
 	{
+		//println!("window_proc WM_QUIT");
 		return 0;
 	}
     else if msg == WM_INPUT
     {
+        //println!("WM_INPUT");
 
+        /*if let Some(data) = win32_get_raw_input_data(l_param as _)
+        {
+            println!("win32_window_proc WM_INPUT");
+        }*/
     }
 
     return DefWindowProcW(h_wnd, msg, w_param, l_param);
@@ -306,10 +580,7 @@ pub struct Window
 
     /* Platform-specific data */
     hinstance: HINSTANCE,
-    handle: HWND,
-    hdc: HDC,
-    hglrc: HGLRC,
-    gl_library: HMODULE
+    handle: HWND
 }
 
 impl Window
@@ -465,17 +736,6 @@ impl Window
         todo!()
     }
 
-    pub fn swap_buffers(&self)
-    {
-        let gl_error: u32 = unsafe { gl::GetError() };
-        if gl_error != gl::NO_ERROR
-        {
-            panic!("OpenGL error {}", gl_error);
-        }
-        
-        unsafe { SwapBuffers(self.hdc) };
-    }
-
     pub fn is_key_down(&self, key: Key) -> bool
     {
         self.keys_current[key as usize]
@@ -489,6 +749,178 @@ impl Window
     pub fn is_key_pressed(&self, key: Key) -> bool
     {
         self.keys_current[key as usize] && !self.keys_previous[key as usize]
+    }
+
+    pub fn gl_create_context(&self, create_info: &GLContextCreateInfo) -> Result<GLContext, GLError>
+    {
+        // Create fake opengl context
+        println!("Creating fake window context");
+        let mut fake_class_name = win32_to_wstring("OpenGL-Context");
+        let fake_wnd_class = unsafe
+        {
+            WNDCLASSW
+            {
+                style: CS_OWNDC,
+                lpfnWndProc: Some(DefWindowProcW),
+                hInstance: self.hinstance,
+                lpszClassName: fake_class_name.as_ptr(),
+                ..std::mem::zeroed()
+            }
+        };
+        let fake_class: u16 = unsafe { RegisterClassW(&fake_wnd_class) };
+        if fake_class == 0
+        {
+            panic!("OpenGL context creation failed!");
+        }
+        let fake_handle = unsafe { CreateWindowExW(0, fake_class as *const WCHAR, [0].as_ptr(), 0, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, std::ptr::null_mut(), std::ptr::null_mut(), self.hinstance, std::ptr::null_mut()) };
+        if fake_handle.is_null()
+        {
+            panic!("OpenGL context creation failed!");
+        }
+        let fake_hdc = unsafe { GetDC(fake_handle) };
+        let fake_pfd = unsafe
+        {
+            PIXELFORMATDESCRIPTOR
+            {
+                nSize: std::mem::size_of::<PIXELFORMATDESCRIPTOR>() as u16,
+                nVersion: 1,
+                dwFlags: PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER,
+                iPixelType: PFD_TYPE_RGBA,
+                cColorBits: 32,
+                cAlphaBits: 8,
+                cDepthBits: 24,
+                cStencilBits: 8,
+                iLayerType: PFD_MAIN_PLANE,
+                ..std::mem::zeroed()
+            }
+        };
+        unsafe { SetPixelFormat(fake_hdc, ChoosePixelFormat(fake_hdc, &fake_pfd), &fake_pfd) };
+        let fake_hglrc = unsafe { wglCreateContext(fake_hdc) };
+        if fake_hglrc.is_null()
+        {
+            panic!("OpenGL context creation failed!");
+        }
+        unsafe { wglMakeCurrent(fake_hdc, fake_hglrc) };
+        #[allow(non_snake_case)]
+        let wglCreateContextAttribsARB: Option<WglCreateContextAttribsARB> =
+        {
+            let symbol = CString::new("wglCreateContextAttribsARB").unwrap();
+            let addr = unsafe { wglGetProcAddress(symbol.as_ptr()) };
+            if !addr.is_null()
+            {
+                Some(unsafe { std::mem::transmute(addr) })
+            }
+            else
+            {
+                None
+            }
+        };
+        #[allow(non_snake_case)]
+        let wglChoosePixelFormatARB: Option<WglChoosePixelFormatARB> =
+        {
+            let symbol = CString::new("wglChoosePixelFormatARB").unwrap();
+            let addr = unsafe { wglGetProcAddress(symbol.as_ptr()) };
+            if !addr.is_null()
+            {
+                Some(unsafe { std::mem::transmute(addr) })
+            }
+            else
+            {
+                None
+            }
+        };
+        #[allow(non_snake_case)]
+        let wglSwapIntervalEXT: Option<WglSwapIntervalEXT> =
+        {
+            let symbol = CString::new("wglSwapIntervalEXT").unwrap();
+            let addr = unsafe { wglGetProcAddress(symbol.as_ptr()) };
+            if !addr.is_null()
+            {
+                Some(unsafe { std::mem::transmute(addr) })
+            }
+            else
+            {
+                None
+            }
+        };
+        unsafe { wglMakeCurrent(fake_hdc, fake_hglrc) };
+        unsafe { ReleaseDC(fake_handle, fake_hdc) };
+        unsafe { UnregisterClassW(fake_class as *const WCHAR, self.hinstance) };
+        unsafe { DestroyWindow(fake_handle) };
+
+        // Create real opengl context
+        println!("Creating real window context");
+        let hdc = unsafe { GetDC(self.handle) };
+        let pixel_format_attribs =
+        [
+            WGL_DRAW_TO_WINDOW_ARB, 1,
+            WGL_ACCELERATION_ARB, WGL_FULL_ACCELERATION_ARB,
+            WGL_SUPPORT_OPENGL_ARB, 1,
+            WGL_DOUBLE_BUFFER_ARB, 1,
+            WGL_PIXEL_TYPE_ARB, WGL_TYPE_RGBA_ARB,
+            WGL_RED_BITS_ARB, 8,
+            WGL_GREEN_BITS_ARB, 8,
+            WGL_BLUE_BITS_ARB, 8,
+            WGL_ALPHA_BITS_ARB, 8,
+            WGL_DEPTH_BITS_ARB, 24,
+            WGL_STENCIL_BITS_ARB, 8,
+            WGL_SAMPLE_BUFFERS_ARB, 0,
+            WGL_SAMPLES_ARB, 0,
+            WGL_FRAMEBUFFER_SRGB_CAPABLE_ARB, 1,
+            0
+        ];
+        let mut pixel_format: i32 = 0;
+        let mut num_formats: u32 = 0;
+        wglChoosePixelFormatARB.unwrap()(hdc, pixel_format_attribs.as_ptr(), std::ptr::null(), 1, &mut pixel_format, &mut num_formats);
+        let mut pfd: PIXELFORMATDESCRIPTOR = unsafe { std::mem::zeroed() };
+        unsafe { DescribePixelFormat(hdc, pixel_format, std::mem::size_of::<PIXELFORMATDESCRIPTOR>() as u32, &mut pfd) };
+        unsafe { SetPixelFormat(hdc, pixel_format, &pfd) };
+        let profile_mask: i32 = WGL_CONTEXT_CORE_PROFILE_BIT_ARB;
+        let ctx_attribs = 
+        [
+            WGL_CONTEXT_MAJOR_VERSION_ARB, 3,
+            WGL_CONTEXT_MINOR_VERSION_ARB, 2,
+            WGL_CONTEXT_PROFILE_MASK_ARB, profile_mask,
+            0
+        ];
+        let hglrc = wglCreateContextAttribsARB.unwrap()(hdc, std::ptr::null_mut(), ctx_attribs.as_ptr());
+        if hglrc == std::ptr::null_mut()
+        {
+            println!("OpenGL context creation failed!");
+            return Err(GLError::CreationFailed);
+        }
+        let gl_library_name = CString::new("opengl32.dll").unwrap();
+        let gl_library = unsafe { LoadLibraryA(gl_library_name.as_ptr()) };
+        unsafe { wglMakeCurrent(hdc, hglrc) };
+        wglSwapIntervalEXT.unwrap()(0); // no vsync for you!
+
+        gl::load_with(|s| unsafe { gl_get_proc_address(s) as *const _ });
+
+        gl::Viewport::load_with(|s| unsafe { gl_get_proc_address(s) as *const _ });
+
+        if !gl::Viewport::is_loaded()
+        {
+            println!("Failed to load opengl viewport functions!");
+            return Err(GLError::CreationFailed);
+        }
+
+        unsafe
+        {
+            gl::Enable(gl::DEBUG_OUTPUT);
+            gl::DebugMessageCallback(Some(gl_debug_message_callback), std::ptr::null());
+        }
+
+        Ok(GLContext
+        {
+            hdc,
+            hglrc,
+            gl_library
+        })
+    }
+
+    pub fn gl_swap_buffers(&self, gl_context: &GLContext)
+    {
+        unsafe { SwapBuffers(gl_context.hdc) };
     }
 }
 
@@ -537,166 +969,6 @@ pub fn create_window(create_info: &WindowCreateInfo) -> Window
         std::ptr::null_mut()
     )};
 
-    // Create fake opengl context
-    println!("Creating fake window context");
-    let mut fake_class_name = win32_to_wstring("OpenGL-Context");
-    let fake_wnd_class = unsafe
-    {
-        WNDCLASSW
-        {
-            style: CS_OWNDC,
-            lpfnWndProc: Some(DefWindowProcW),
-            hInstance: hinstance,
-            lpszClassName: fake_class_name.as_ptr(),
-            ..std::mem::zeroed()
-        }
-    };
-    let fake_class: u16 = unsafe { RegisterClassW(&fake_wnd_class) };
-    if fake_class == 0
-    {
-        panic!("OpenGL context creation failed!");
-    }
-    let fake_handle = unsafe { CreateWindowExW(0, fake_class as *const WCHAR, [0].as_ptr(), 0, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, std::ptr::null_mut(), std::ptr::null_mut(), hinstance, std::ptr::null_mut()) };
-    if fake_handle.is_null()
-    {
-        panic!("OpenGL context creation failed!");
-    }
-    let fake_hdc = unsafe { GetDC(fake_handle) };
-    let fake_pfd = unsafe
-    {
-        PIXELFORMATDESCRIPTOR
-        {
-            nSize: std::mem::size_of::<PIXELFORMATDESCRIPTOR>() as u16,
-            nVersion: 1,
-            dwFlags: PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER,
-            iPixelType: PFD_TYPE_RGBA,
-            cColorBits: 32,
-            cAlphaBits: 8,
-            cDepthBits: 24,
-            cStencilBits: 8,
-            iLayerType: PFD_MAIN_PLANE,
-            ..std::mem::zeroed()
-        }
-    };
-    unsafe { SetPixelFormat(fake_hdc, ChoosePixelFormat(fake_hdc, &fake_pfd), &fake_pfd) };
-    let fake_hglrc = unsafe { wglCreateContext(fake_hdc) };
-    if fake_hglrc.is_null()
-    {
-        panic!("OpenGL context creation failed!");
-    }
-    unsafe { wglMakeCurrent(fake_hdc, fake_hglrc) };
-    #[allow(non_snake_case)]
-    let wglCreateContextAttribsARB: Option<WglCreateContextAttribsARB> =
-    {
-        let symbol = CString::new("wglCreateContextAttribsARB").unwrap();
-        let addr = unsafe { wglGetProcAddress(symbol.as_ptr()) };
-        if !addr.is_null()
-        {
-            Some(unsafe { std::mem::transmute(addr) })
-        }
-        else
-        {
-            None
-        }
-    };
-    #[allow(non_snake_case)]
-    let wglChoosePixelFormatARB: Option<WglChoosePixelFormatARB> =
-    {
-        let symbol = CString::new("wglChoosePixelFormatARB").unwrap();
-        let addr = unsafe { wglGetProcAddress(symbol.as_ptr()) };
-        if !addr.is_null()
-        {
-            Some(unsafe { std::mem::transmute(addr) })
-        }
-        else
-        {
-            None
-        }
-    };
-    #[allow(non_snake_case)]
-    let wglSwapIntervalEXT: Option<WglSwapIntervalEXT> =
-    {
-        let symbol = CString::new("wglSwapIntervalEXT").unwrap();
-        let addr = unsafe { wglGetProcAddress(symbol.as_ptr()) };
-        if !addr.is_null()
-        {
-            Some(unsafe { std::mem::transmute(addr) })
-        }
-        else
-        {
-            None
-        }
-    };
-    unsafe { wglMakeCurrent(fake_hdc, fake_hglrc) };
-    unsafe { ReleaseDC(fake_handle, fake_hdc) };
-    unsafe { UnregisterClassW(fake_class as *const WCHAR, hinstance) };
-    unsafe { DestroyWindow(fake_handle) };
-
-    // Create real opengl context
-    println!("Creating real window context");
-    let hdc = unsafe { GetDC(handle) };
-    let pixel_format_attribs =
-    [
-        WGL_DRAW_TO_WINDOW_ARB, 1,
-        WGL_ACCELERATION_ARB, WGL_FULL_ACCELERATION_ARB,
-        WGL_SUPPORT_OPENGL_ARB, 1,
-        WGL_DOUBLE_BUFFER_ARB, 1,
-        WGL_PIXEL_TYPE_ARB, WGL_TYPE_RGBA_ARB,
-        WGL_RED_BITS_ARB, 8,
-        WGL_GREEN_BITS_ARB, 8,
-        WGL_BLUE_BITS_ARB, 8,
-        WGL_ALPHA_BITS_ARB, 8,
-        WGL_DEPTH_BITS_ARB, 24,
-        WGL_STENCIL_BITS_ARB, 8,
-        WGL_SAMPLE_BUFFERS_ARB, 0,
-        WGL_SAMPLES_ARB, 0,
-        WGL_FRAMEBUFFER_SRGB_CAPABLE_ARB, 1,
-        0
-    ];
-    let mut pixel_format: i32 = 0;
-    let mut num_formats: u32 = 0;
-    wglChoosePixelFormatARB.unwrap()(hdc, pixel_format_attribs.as_ptr(), std::ptr::null(), 1, &mut pixel_format, &mut num_formats);
-    let mut pfd: PIXELFORMATDESCRIPTOR = unsafe { std::mem::zeroed() };
-    unsafe { DescribePixelFormat(hdc, pixel_format, std::mem::size_of::<PIXELFORMATDESCRIPTOR>() as u32, &mut pfd) };
-    unsafe { SetPixelFormat(hdc, pixel_format, &pfd) };
-    let profile_mask: i32 = WGL_CONTEXT_CORE_PROFILE_BIT_ARB;
-    let ctx_attribs = 
-    [
-        WGL_CONTEXT_MAJOR_VERSION_ARB, 3,
-        WGL_CONTEXT_MINOR_VERSION_ARB, 2,
-        WGL_CONTEXT_PROFILE_MASK_ARB, profile_mask,
-        0
-    ];
-    let hglrc = wglCreateContextAttribsARB.unwrap()(hdc, std::ptr::null_mut(), ctx_attribs.as_ptr());
-    if hglrc == std::ptr::null_mut()
-    {
-        panic!("OpenGL context creation failed!");
-    }
-    let gl_library_name = CString::new("opengl32.dll").unwrap();
-    let gl_library = unsafe { LoadLibraryA(gl_library_name.as_ptr()) };
-    unsafe { wglMakeCurrent(hdc, hglrc) };
-    wglSwapIntervalEXT.unwrap()(0); // no vsync for you!
-
-    gl::load_with(|s| unsafe { gl_get_proc_address(s) as *const _ });
-
-    gl::Viewport::load_with(|s| unsafe { gl_get_proc_address(s) as *const _ });
-
-    if !gl::Viewport::is_loaded()
-    {
-        panic!("Failed to load opengl viewport functions!");
-    }
-
-    unsafe
-    {
-        gl::Enable(gl::DEBUG_OUTPUT);
-        gl::DebugMessageCallback(Some(gl_debug_message_callback), std::ptr::null());
-
-        println!("GL_VENDOR: {}", std::ffi::CStr::from_ptr(gl::GetString(gl::VENDOR) as *const i8).to_str().unwrap());
-        println!("GL_RENDERER: {}", std::ffi::CStr::from_ptr(gl::GetString(gl::RENDERER) as *const i8).to_str().unwrap());
-        println!("GL_VERSION: {}", std::ffi::CStr::from_ptr(gl::GetString(gl::VERSION) as *const i8).to_str().unwrap());
-        println!("GL_SHADING_LANGUAGE_VERSION: {}", std::ffi::CStr::from_ptr(gl::GetString(gl::SHADING_LANGUAGE_VERSION) as *const i8).to_str().unwrap());
-    }
-
     unsafe { AdjustWindowRect(&mut window_rect, WS_OVERLAPPEDWINDOW, FALSE); }
 
     unsafe { ShowWindow(handle, SW_SHOW); }
@@ -727,10 +999,7 @@ pub fn create_window(create_info: &WindowCreateInfo) -> Window
         events: Vec::new(),
 
         hinstance,
-        handle,
-        hdc,
-        hglrc,
-        gl_library
+        handle
     }
 }
 
