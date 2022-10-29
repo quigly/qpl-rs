@@ -529,30 +529,18 @@ unsafe extern "system" fn win32_window_proc(h_wnd: HWND, msg: UINT, w_param: WPA
 {
     if msg == WM_DESTROY
 	{
-		//println!("window_proc WM_DESTROY");
         PostQuitMessage(0);
 		return 0;
     }
     else if msg == WM_CLOSE
 	{
-		//println!("window_proc WM_CLOSE");
 		DestroyWindow(h_wnd);
 		return 0;
 	}
     else if msg == WM_QUIT
 	{
-		//println!("window_proc WM_QUIT");
 		return 0;
 	}
-    else if msg == WM_INPUT
-    {
-        //println!("WM_INPUT");
-
-        /*if let Some(data) = win32_get_raw_input_data(l_param as _)
-        {
-            println!("win32_window_proc WM_INPUT");
-        }*/
-    }
 
     return DefWindowProcW(h_wnd, msg, w_param, l_param);
 }
@@ -754,7 +742,6 @@ impl Window
     pub fn gl_create_context(&self, create_info: &GLContextCreateInfo) -> Result<GLContext, GLError>
     {
         // Create fake opengl context
-        println!("Creating fake window context");
         let mut fake_class_name = win32_to_wstring("OpenGL-Context");
         let fake_wnd_class = unsafe
         {
@@ -849,23 +836,22 @@ impl Window
         unsafe { DestroyWindow(fake_handle) };
 
         // Create real opengl context
-        println!("Creating real window context");
         let hdc = unsafe { GetDC(self.handle) };
         let pixel_format_attribs =
         [
             WGL_DRAW_TO_WINDOW_ARB, 1,
             WGL_ACCELERATION_ARB, WGL_FULL_ACCELERATION_ARB,
             WGL_SUPPORT_OPENGL_ARB, 1,
-            WGL_DOUBLE_BUFFER_ARB, 1,
+            WGL_DOUBLE_BUFFER_ARB, create_info.double_buffer as _,
             WGL_PIXEL_TYPE_ARB, WGL_TYPE_RGBA_ARB,
-            WGL_RED_BITS_ARB, 8,
-            WGL_GREEN_BITS_ARB, 8,
-            WGL_BLUE_BITS_ARB, 8,
-            WGL_ALPHA_BITS_ARB, 8,
-            WGL_DEPTH_BITS_ARB, 24,
-            WGL_STENCIL_BITS_ARB, 8,
-            WGL_SAMPLE_BUFFERS_ARB, 0,
-            WGL_SAMPLES_ARB, 0,
+            WGL_RED_BITS_ARB, create_info.red_bits as _,
+            WGL_GREEN_BITS_ARB, create_info.green_bits as _,
+            WGL_BLUE_BITS_ARB, create_info.blue_bits as _,
+            WGL_ALPHA_BITS_ARB, create_info.alpha_bits as _,
+            WGL_DEPTH_BITS_ARB, create_info.depth_bits as _,
+            WGL_STENCIL_BITS_ARB, create_info.stencil_bits as _,
+            WGL_SAMPLE_BUFFERS_ARB, if create_info.samples.is_some() { 1 } else { 0 },
+            WGL_SAMPLES_ARB, create_info.samples.unwrap_or(0) as _,
             WGL_FRAMEBUFFER_SRGB_CAPABLE_ARB, 1,
             0
         ];
@@ -979,8 +965,6 @@ pub fn create_window(create_info: &WindowCreateInfo) -> Window
     {
         panic!("Win32 error: {}", win_error);
     }
-
-    println!("Created window");
 
     Window
     {
