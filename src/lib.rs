@@ -89,18 +89,22 @@ pub enum Key
 	Ctrl = 67,
 	Shift = 68,
 	Alt = 69,
-	F1 = 70,
-	F2 = 71,
-	F3 = 72,
-	F4 = 73,
-	F5 = 74,
-	F6 = 75,
-	F7 = 76,
-	F8 = 77,
-	F9 = 78,
-	F10 = 79,
-	F11 = 80,
-	F12 = 81,
+	Gui = 70,
+	F1 = 71,
+	F2 = 72,
+	F3 = 73,
+	F4 = 74,
+	F5 = 75,
+	F6 = 76,
+	F7 = 77,
+	F8 = 78,
+	F9 = 79,
+	F10 = 80,
+	F11 = 81,
+	F12 = 82,
+
+	PrintScreen = 83,
+	Menu = 84
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -136,18 +140,62 @@ pub enum WindowMode
     Fullscreen
 }
 
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
+pub struct KeyModifiers
+{
+	pub shift: bool,
+	pub ctrl: bool,
+	pub alt: bool,
+	pub gui: bool,
+	pub caps: bool
+}
+
+impl Default for KeyModifiers
+{
+	fn default() -> Self
+	{
+		Self
+		{
+			shift: false,
+			ctrl: false,
+			alt: false,
+			gui: false,
+			caps: false
+		}	
+	}
+}
+
 #[derive(Debug, Copy, Clone)]
 pub enum Event
 {
     Quit,
-    KeyPress
+    Key
     {
-        key: Key
+        key: Key,
+		state: u8,
+		modifiers: KeyModifiers
     },
-    KeyRelease
-    {
-        key: Key
-    }
+	MouseMotion
+	{
+		x: i32,
+		y: i32,
+		xrel: i32,
+		yrel: i32
+	},
+	MouseButton
+	{
+		x: i32,
+		y: i32,
+		button: u8,
+		state: u8
+	},
+	MouseScroll
+	{
+		x: i32,
+		y: i32,
+		xscroll: f32,
+		yscroll: f32
+	}
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -158,4 +206,27 @@ pub struct WindowCreateInfo<'a>
     pub title: &'a str,
     pub mode: WindowMode,
     pub resizable: bool
+}
+
+impl Default for WindowCreateInfo<'_>
+{
+	fn default() -> Self
+	{
+		Self
+		{
+			width: 1280,
+			height: 720,
+			title: "Game",
+			mode: WindowMode::Windowed,
+			resizable: false
+		}
+	}
+}
+
+#[derive(Debug)]
+pub enum GlError
+{
+    InvalidWindowHandle,
+    VersionNotSupported,
+    CreationFailed,
 }
