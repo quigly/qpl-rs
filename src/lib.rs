@@ -170,7 +170,7 @@ impl Default for KeyModifiers
 			alt: false,
 			gui: false,
 			caps: false
-		}	
+		}
 	}
 }
 
@@ -236,6 +236,7 @@ impl Default for WindowCreateInfo<'_>
 	}
 }
 
+#[derive(Debug, Copy, Clone)]
 pub struct GLContextCreateInfo
 {
     pub version: (u8, u8),
@@ -270,10 +271,66 @@ impl Default for GLContextCreateInfo
 	}
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub enum GLError
 {
     InvalidWindowHandle,
     VersionNotSupported,
     CreationFailed,
+}
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum GamepadButton
+{
+	A,
+	B,
+	X,
+	Y,
+	Back,
+	Guide,
+	Start,
+	LeftStick,
+	RightStick,
+	LeftShoulder,
+	RightShoulder,
+	DpadUp,
+	DpadDown,
+	DpadLeft,
+	DpadRight
+}
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum ButtonState
+{
+	Up,
+	Down,
+	Pressed
+}
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum GamepadType
+{
+	Xbox360,
+	XboxOne,
+	Playstation3,
+	Playstation4,
+	Playstation5,
+	NintendoSwitch
+}
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum GamepadAxis
+{
+	LeftX,
+	LeftY,
+	RightX,
+	RightY,
+	LeftTrigger,
+	RightTrigger
+}
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum GamepadError
+{
+	NotConnected,
 }

@@ -477,6 +477,38 @@ pub struct GLContext
     gl_library: HMODULE
 }
 
+/* Gamepads */
+
+pub struct Gamepad
+{
+    pub buttons: [ButtonState; 15],
+
+    state: XINPUT_STATE,
+}
+
+impl Gamepad
+{
+    pub fn is_button_down(&self, button: GamepadButton) -> bool
+    {
+        self.buttons[button as usize] == ButtonState::Down
+    }
+
+    pub fn is_button_up(&self, button: GamepadButton) -> bool
+    {
+        self.buttons[button as usize] == ButtonState::Up
+    }
+
+    pub fn is_button_pressed(&self, button: GamepadButton) -> bool
+    {
+        self.buttons[button as usize] == ButtonState::Pressed
+    }
+
+    pub fn get_button_state(&self, button: GamepadButton) -> ButtonState
+    {
+        self.buttons[button as usize]
+    }
+}
+
 /* Internal functions */
 
 fn win32_to_wstring(str: &str) -> Vec<u16>
@@ -908,6 +940,15 @@ impl Window
     {
         unsafe { SwapBuffers(gl_context.hdc) };
     }
+
+    pub fn vk_create_surface(&self, entry: &ash::Entry, instance: &ash::Instance, allocation_callbacks: Option<&ash::vk::AllocationCallbacks>) -> ash::vk::SurfaceKHR
+    {
+        let create_info = ash::vk::Win32SurfaceCreateInfoKHR::builder()
+            .hinstance(self.hinstance as _)
+            .hwnd(self.handle as _);
+        let win32_surface_loader = ash::extensions::khr::Win32Surface::new(entry, instance);
+        unsafe { win32_surface_loader.create_win32_surface(&create_info, allocation_callbacks).unwrap() }
+    }
 }
 
 /* Public platform functions */
@@ -1072,4 +1113,40 @@ pub unsafe fn gl_get_proc_address(symbol: &str) -> *const c_void
     let module_file_name = CString::new("opengl32.dll").unwrap();
     let module = LoadLibraryA(module_file_name.as_ptr());
     GetProcAddress(module, symbol.as_ptr()) as *const c_void
+}
+
+pub fn get_num_gamepads() -> u32
+{
+    let mut count: u32 = 0;
+    let mut state: XINPUT_STATE = unsafe { std::mem::zeroed() };
+
+    for index in 0..16 as u32
+    {
+        if unsafe { XInputGetState(index, &mut state) } == ERROR_SUCCESS
+        {
+            count += 1;
+        }
+    }
+
+    count
+}
+
+pub fn open_gamepad(index: u32) -> Result<Gamepad, GamepadError>
+{
+    let mut state: XINPUT_STATE = unsafe { std::mem::zeroed() };
+    if unsafe { XInputGetState(index, &mut state) } != ERROR_SUCCESS
+    {
+        return Err(GamepadError::NotConnected);
+    }
+
+    Ok(Gamepad
+    {
+        buttons: [ButtonState::Up; 15],
+        state
+    })
+}
+
+pub fn vk_get_surface_extension() -> &'static str
+{
+    "VK_KHR_win32_surface"
 }
