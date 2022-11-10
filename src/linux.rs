@@ -203,7 +203,7 @@ impl Window
     fn process_xevent(&mut self, xevent: &xlib::XEvent)
     {
         let mut event: Option<Event> = None;
-
+		
         match xevent.get_type()
         {
             xlib::KeyPress =>
@@ -246,7 +246,20 @@ impl Window
             },
             xlib::ClientMessage =>
             {
-                println!("ClientMessage");
+                unsafe
+                {
+                    let wm = CString::new("WM_DELETE_WINDOW").expect("If you see this you're fucked").as_ptr();
+                    let mut deletemsg = xlib::XInternAtom(
+                        DISPLAY,
+                        wm,
+                        0);
+                    xlib::XSetWMProtocols(DISPLAY, self.screen_id as c_ulong, & mut deletemsg, 1);
+                    if xevent.client_message.data.get_long(0) == deletemsg as c_long
+                    {
+						event = Some(Event::Quit);
+                        self.should_close = true;
+                    }
+                }
             },
             _ => {}
         };
