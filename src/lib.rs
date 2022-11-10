@@ -144,9 +144,9 @@ pub struct SystemMemory
 #[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
 pub enum WindowMode
 {
-    Windowed,
-    Borderless,
-    Fullscreen
+	Windowed,
+	Borderless,
+	Fullscreen
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
@@ -177,13 +177,13 @@ impl Default for KeyModifiers
 #[derive(Debug, Copy, Clone)]
 pub enum Event
 {
-    Quit,
-    Key
-    {
-        key: Key,
+	Quit,
+	Key
+	{
+		key: Key,
 		state: u8,
 		modifiers: KeyModifiers
-    },
+	},
 	MouseMotion
 	{
 		x: i32,
@@ -212,11 +212,11 @@ pub struct WindowCreateInfo<'a>
 {
 	pub x: i32,
 	pub y: i32,
-    pub width: u32,
-    pub height: u32,
-    pub title: &'a str,
-    pub mode: WindowMode,
-    pub resizable: bool
+	pub width: u32,
+	pub height: u32,
+	pub title: &'a str,
+	pub mode: WindowMode,
+	pub resizable: bool
 }
 
 impl Default for WindowCreateInfo<'_>
@@ -239,14 +239,14 @@ impl Default for WindowCreateInfo<'_>
 #[derive(Debug, Copy, Clone)]
 pub struct GLContextCreateInfo
 {
-    pub version: (u8, u8),
-    pub red_bits: u8,
-    pub green_bits: u8,
-    pub blue_bits: u8,
-    pub alpha_bits: u8,
-    pub depth_bits: u8,
-    pub stencil_bits: u8,
-    pub samples: Option<u8>,
+	pub version: (u8, u8),
+	pub red_bits: u8,
+	pub green_bits: u8,
+	pub blue_bits: u8,
+	pub alpha_bits: u8,
+	pub depth_bits: u8,
+	pub stencil_bits: u8,
+	pub samples: Option<u8>,
 	pub double_buffer: bool,
 	pub vsync: bool
 }
@@ -274,9 +274,9 @@ impl Default for GLContextCreateInfo
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum GLError
 {
-    InvalidWindowHandle,
-    VersionNotSupported,
-    CreationFailed,
+	InvalidWindowHandle,
+	VersionNotSupported,
+	CreationFailed,
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
