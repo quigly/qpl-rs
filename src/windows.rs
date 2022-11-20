@@ -470,11 +470,21 @@ extern "system" fn gl_debug_message_callback(
 		error_type, severity, message_str);
 }
 
+#[derive(Debug)]
 pub struct GLContext
 {
-	hdc: HDC,
-	hglrc: HGLRC,
-	gl_library: HMODULE
+    hdc: HDC,
+    hglrc: HGLRC,
+    gl_library: HMODULE
+}
+
+impl GLContext
+{
+    pub fn swap_buffers(&self)
+    {
+        let success: i32 = unsafe { SwapBuffers(self.hdc) };
+		assert!(success == 1);
+    }
 }
 
 /* Gamepads */

@@ -33,9 +33,21 @@ extern "system" fn gl_debug_message_callback(
 		error_type, severity, message_str);
 }
 
+#[derive(Debug)]
 pub struct GLContext
 {
-	glx_context: glx::GLXContext
+	glx_context: glx::GLXContext,
+	handle: u64
+}
+
+impl GLContext
+{
+    pub fn swap_buffers(&self)
+    {
+        unsafe { glx::glXSwapBuffers(DISPLAY, self.handle) }
+    }
+
+	
 }
 
 /* Gamepads */
@@ -404,12 +416,7 @@ impl Window
 			gl::DebugMessageCallback(Some(gl_debug_message_callback), std::ptr::null());
 		}
 
-		Ok(GLContext { glx_context })
-	}
-
-	pub fn gl_swap_buffers(&self, gl_context: &GLContext)
-	{
-		unsafe { glx::glXSwapBuffers(DISPLAY, self.handle) }
+		Ok(GLContext { glx_context, handle })
 	}
 
 	pub fn vk_create_surface(&self, entry: &ash::Entry, instance: &ash::Instance, allocation_callbacks: Option<&ash::vk::AllocationCallbacks>) -> ash::vk::SurfaceKHR
