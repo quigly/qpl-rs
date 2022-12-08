@@ -464,6 +464,8 @@ extern "system" fn gl_debug_message_callback(
 	length: i32, message: *const i8,
 	user_param: *mut libc::c_void)
 {
+	if severity == gl::DEBUG_SEVERITY_NOTIFICATION { return; }
+
 	let message_str = unsafe { std::ffi::CStr::from_ptr(message) }.to_str().unwrap();
 	println!("GL CALLBACK: {} type = 0x{:X}, severity = 0x{:X}, message = {}",
 		if error_type == gl::DEBUG_TYPE_ERROR { "** GL ERROR **" } else { "" },
@@ -483,7 +485,6 @@ impl GLContext
     pub fn swap_buffers(&self)
     {
         let success: i32 = unsafe { SwapBuffers(self.hdc) };
-		assert!(success == 1);
     }
 }
 
