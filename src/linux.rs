@@ -158,7 +158,6 @@ fn x11_convert_keycode_to_key(keycode: u32) -> Key
 	let key = x11_convert_keysym_to_key(keysym);
 	if key != Key::Unknown
 	{
-		println!("Found key in match list");
 		return key;
 	}
 
@@ -167,7 +166,6 @@ fn x11_convert_keycode_to_key(keycode: u32) -> Key
 	let key = x11_convert_keysym_to_key(keysym);
 	if key != Key::Unknown
 	{
-		println!("Found key in match list");
 		return key;
 	}
 
