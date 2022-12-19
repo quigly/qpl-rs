@@ -782,6 +782,15 @@ impl Window
 		self.keys_current[key as usize] && !self.keys_previous[key as usize]
 	}
 
+	pub fn get_mouse_pos(&self) -> (i32, i32)
+	{
+		let mut point: POINT = unsafe { std::mem::zeroed() };
+		unsafe { GetCursorPos(&mut point); }
+		unsafe { ScreenToClient(self.handle, &mut point); }
+		println!("mouse pos ({}, {})", point.x, point.y);
+		(point.x, point.y)
+	}
+
 	pub fn gl_create_context(&self, create_info: &GLContextCreateInfo) -> Result<GLContext, GLError>
 	{
 		// Create fake opengl context
@@ -994,6 +1003,13 @@ pub fn create_window(create_info: &WindowCreateInfo) -> Window
 		bottom: create_info.height as LONG
 	};
 
+	unsafe { AdjustWindowRectEx(&mut window_rect, WS_OVERLAPPEDWINDOW, FALSE, 0); }
+
+	let frame_x: i32 = window_rect.left;
+	let frame_y: i32 = window_rect.top;
+	let frame_width: i32 = window_rect.right - window_rect.left;
+	let frame_height: i32 = window_rect.bottom - window_rect.top;
+
 	let hinstance = unsafe { GetModuleHandleW(core::ptr::null()) };
 
 	let class_name_w = win32_register_class("my class", CS_HREDRAW | CS_VREDRAW | CS_OWNDC);
@@ -1003,10 +1019,10 @@ pub fn create_window(create_info: &WindowCreateInfo) -> Window
 		class_name_w.as_ptr(),
 		win32_to_wstring(create_info.title).as_ptr(),
 		WS_OVERLAPPEDWINDOW,
-		CW_USEDEFAULT,
-		CW_USEDEFAULT,
-		create_info.width as i32,
-		create_info.height as i32,
+		frame_x,
+		frame_y,
+		frame_width,
+		frame_height,
 		0 as HWND,
 		0 as HMENU,
 		hinstance,
@@ -1014,8 +1030,6 @@ pub fn create_window(create_info: &WindowCreateInfo) -> Window
 	)};
 
 	unsafe { SetWindowPos(handle, 0 as _, x, y, 0, 0, SWP_NOSIZE); }
-
-	unsafe { AdjustWindowRect(&mut window_rect, WS_OVERLAPPEDWINDOW, FALSE); }
 
 	unsafe { ShowWindow(handle, SW_SHOW); }
 	unsafe { UpdateWindow(handle); }
