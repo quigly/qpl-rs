@@ -787,7 +787,6 @@ impl Window
 		let mut point: POINT = unsafe { std::mem::zeroed() };
 		unsafe { GetCursorPos(&mut point); }
 		unsafe { ScreenToClient(self.handle, &mut point); }
-		println!("mouse pos ({}, {})", point.x, point.y);
 		(point.x, point.y)
 	}
 
