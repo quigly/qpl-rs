@@ -158,7 +158,6 @@ fn x11_convert_keycode_to_key(keycode: u32) -> Key
 	let key = x11_convert_keysym_to_key(keysym);
 	if key != Key::Unknown
 	{
-		println!("Found key in match list");
 		return key;
 	}
 
@@ -167,7 +166,6 @@ fn x11_convert_keycode_to_key(keycode: u32) -> Key
 	let key = x11_convert_keysym_to_key(keysym);
 	if key != Key::Unknown
 	{
-		println!("Found key in match list");
 		return key;
 	}
 
@@ -223,6 +221,8 @@ impl Window
 				let keycode: u32 = unsafe { xevent.key.keycode };
 				let key = x11_convert_keycode_to_key(keycode);
 
+				self.keys_current[key as usize] = true;
+
 				let modifiers = KeyModifiers
 				{
 					..Default::default()
@@ -239,6 +239,8 @@ impl Window
 			{
 				let keycode: u32 = unsafe { xevent.key.keycode };
 				let key = x11_convert_keycode_to_key(keycode);
+
+				self.keys_current[key as usize] = false;
 
 				let modifiers = KeyModifiers
 				{
@@ -308,17 +310,17 @@ impl Window
 
 	pub fn is_key_down(&self, key: Key) -> bool
 	{
-		todo!()
+		self.keys_current[key as usize]
 	}
 
 	pub fn is_key_up(&self, key: Key) -> bool
 	{
-		todo!()
+		!self.keys_current[key as usize]
 	}
 
 	pub fn is_key_pressed(&self, key: Key) -> bool
 	{
-		todo!()
+		self.keys_current[key as usize] && !self.keys_previous[key as usize]
 	}
 
 	pub fn gl_create_context(&self, create_info: &GLContextCreateInfo) -> Result<GLContext, GLError>
@@ -416,7 +418,7 @@ impl Window
 			gl::DebugMessageCallback(Some(gl_debug_message_callback), std::ptr::null());
 		}
 
-		Ok(GLContext { glx_context, handle })
+		Ok(GLContext { glx_context, handle: self.handle })
 	}
 
 	pub fn vk_create_surface(&self, entry: &ash::Entry, instance: &ash::Instance, allocation_callbacks: Option<&ash::vk::AllocationCallbacks>) -> ash::vk::SurfaceKHR
