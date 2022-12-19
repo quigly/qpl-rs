@@ -608,6 +608,8 @@ pub struct Window
 	mouse_tracked: bool,
 	keys_current: [bool; 256],
 	keys_previous: [bool; 256],
+	mbuttons_current: [bool; 16],
+	mbuttons_previous: [bool; 16],
 
 	/* Platform-specific data */
 	hinstance: HINSTANCE,
@@ -621,6 +623,11 @@ impl Window
 		for i in 0..self.keys_current.len()
 		{
 			self.keys_previous[i] = self.keys_current[i];
+		}
+
+		for i in 0..self.mbuttons_current.len()
+		{
+			self.mbuttons_previous[i] = self.mbuttons_current[i];
 		}
 	}
 
@@ -686,6 +693,8 @@ impl Window
 						let button: u8 = 0;
 						let state: u8 = 1;
 
+						self.mbuttons_current[button as usize] = true;
+
 						event = Some(Event::MouseButton { x, y, button, state });
 					},
 					WM_MBUTTONDOWN =>
@@ -694,6 +703,8 @@ impl Window
 						let y: i32 = GET_Y_LPARAM(msg.lParam);
 						let button: u8 = 1;
 						let state: u8 = 1;
+
+						self.mbuttons_current[button as usize] = true;
 
 						event = Some(Event::MouseButton { x, y, button, state });
 					},
@@ -704,6 +715,8 @@ impl Window
 						let button: u8 = 2;
 						let state: u8 = 1;
 
+						self.mbuttons_current[button as usize] = true;
+
 						event = Some(Event::MouseButton { x, y, button, state });
 					},
 					WM_LBUTTONUP =>
@@ -712,6 +725,8 @@ impl Window
 						let y: i32 = GET_Y_LPARAM(msg.lParam);
 						let button: u8 = 0;
 						let state: u8 = 0;
+
+						self.mbuttons_current[button as usize] = false;
 
 						event = Some(Event::MouseButton { x, y, button, state });
 					},
@@ -722,6 +737,8 @@ impl Window
 						let button: u8 = 1;
 						let state: u8 = 0;
 
+						self.mbuttons_current[button as usize] = false;
+
 						event = Some(Event::MouseButton { x, y, button, state });
 					},
 					WM_RBUTTONUP =>
@@ -730,6 +747,8 @@ impl Window
 						let y: i32 = GET_Y_LPARAM(msg.lParam);
 						let button: u8 = 2;
 						let state: u8 = 0;
+
+						self.mbuttons_current[button as usize] = false;
 
 						event = Some(Event::MouseButton { x, y, button, state });
 					},
@@ -780,6 +799,21 @@ impl Window
 	pub fn is_key_pressed(&self, key: Key) -> bool
 	{
 		self.keys_current[key as usize] && !self.keys_previous[key as usize]
+	}
+
+	pub fn is_mouse_button_down(&self, button: u8) -> bool
+	{
+		self.mbuttons_current[button as usize]
+	}
+
+	pub fn is_mouse_button_up(&self, button: u8) -> bool
+	{
+		!self.mbuttons_current[button as usize]
+	}
+
+	pub fn is_mouse_button_pressed(&self, button: u8) -> bool
+	{
+		self.mbuttons_current[button as usize] && !self.mbuttons_previous[button as usize]
 	}
 
 	pub fn get_mouse_pos(&self) -> (i32, i32)
@@ -1051,6 +1085,8 @@ pub fn create_window(create_info: &WindowCreateInfo) -> Window
 		mouse_tracked: false,
 		keys_current: [false; 256],
 		keys_previous: [false; 256],
+		mbuttons_current: [false; 16],
+		mbuttons_previous: [false; 16],
 		resizable: create_info.resizable,
 		should_close: false,
 		events: Vec::new(),
