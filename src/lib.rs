@@ -334,3 +334,11 @@ pub enum GamepadError
 {
 	NotConnected,
 }
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum CursorMode
+{
+	Normal,
+	Disabled,
+	Hidden
+}

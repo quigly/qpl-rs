@@ -12,12 +12,15 @@ use libc::*;
 use winapi::*;
 use winapi::shared::basetsd::*;
 use winapi::shared::minwindef::*;
+use winapi::shared::mmreg::*;
 use winapi::shared::windef::*;
 use winapi::shared::windowsx::*;
 use winapi::shared::winerror::*;
 use winapi::um::errhandlingapi::*;
 use winapi::um::libloaderapi::*;
 use winapi::um::memoryapi::*;
+use winapi::um::mmeapi::*;
+use winapi::um::mmsystem::*;
 use winapi::um::profileapi::*;
 use winapi::um::synchapi::*;
 use winapi::um::sysinfoapi::*;
@@ -423,6 +426,69 @@ fn win32_convert_scancode_to_key(scancode: u32) -> Option<Key>
 	}
 }
 
+enum RawDeviceInfo
+{
+	Mouse(RID_DEVICE_INFO_MOUSE),
+	Keyboard(RID_DEVICE_INFO_KEYBOARD),
+	Hid(RID_DEVICE_INFO_HID)
+}
+
+impl From<RID_DEVICE_INFO> for RawDeviceInfo
+{
+	fn from(info: RID_DEVICE_INFO) -> Self
+	{
+		unsafe
+		{
+			match info.dwType
+			{
+				RIM_TYPEMOUSE => RawDeviceInfo::Mouse(*info.u.mouse()),
+				RIM_TYPEKEYBOARD => RawDeviceInfo::Keyboard(*info.u.keyboard()),
+				RIM_TYPEHID => RawDeviceInfo::Hid(*info.u.hid()),
+				_ => unreachable!()
+			}
+		}
+	}
+}
+
+fn win32_error_string(err: DWORD) -> String
+{
+	let mut buffer = [0 as WCHAR; 2048];
+
+	unsafe
+	{
+		let res = FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+			std::ptr::null_mut(), err, 0,
+			buffer.as_mut_ptr(), buffer.len() as DWORD, std::ptr::null_mut());
+		if res == 0
+		{
+			return format!("OS Error {} (FormatMessageW() returned error)", err);
+		}
+
+		let b = buffer.iter().position(|&b| b == 0).unwrap_or(buffer.len());
+		let msg = String::from_utf16(&buffer[..b]);
+		match msg
+		{
+			Ok(msg) => msg.to_string(),
+			Err(..) => format!("OS Error {} (FormatMessageW() returned invalid UTF-16)", err)
+		}
+	}
+}
+
+#[derive(Debug, Clone)]
+struct Win32Error
+{
+	err: DWORD,
+	message: String
+}
+
+impl Win32Error
+{
+	fn new(err: DWORD) -> Self
+	{
+		Self { err, message: win32_error_string(err) }
+	}
+}
+
 /* OpenGL */
 
 type WglCreateContextAttribsARB = extern "system" fn(HDC, HGLRC, *const i32) -> HGLRC;
@@ -537,9 +603,74 @@ fn win32_decode_wstring(mut wide_c_string: &[u16]) -> std::ffi::OsString
 	std::ffi::OsString::from_wide(wide_c_string)
 }
 
-fn win32_get_last_error() -> u32
+fn win32_get_last_error() -> Option<Win32Error>
 {
-	unsafe { GetLastError() }
+	let err = unsafe { GetLastError() };
+	if err == ERROR_SUCCESS
+	{
+		return None;
+	}
+
+	Some(Win32Error::new(err))
+}
+
+fn win32_to_error(result: BOOL) -> Result<(), std::io::Error>
+{
+	if result == (false as BOOL)
+	{
+		return Err(std::io::Error::last_os_error());
+	}
+
+	Ok(())
+}
+
+fn win32_get_clip_cursor() -> Result<RECT, std::io::Error>
+{
+	unsafe
+	{
+		let mut rect: RECT = std::mem::zeroed();
+		win32_to_error(GetClipCursor(&mut rect)).map(|_| rect)
+	}
+}
+
+fn win32_get_desktop_rect() -> RECT
+{
+	unsafe
+	{
+		let left = GetSystemMetrics(SM_XVIRTUALSCREEN);
+		let top = GetSystemMetrics(SM_YVIRTUALSCREEN);
+
+		RECT
+		{
+			left,
+			top,
+			right: left + GetSystemMetrics(SM_CXVIRTUALSCREEN),
+			bottom: top + GetSystemMetrics(SM_CYVIRTUALSCREEN)
+		}
+	}
+}
+
+fn win32_register_raw_input_mouse()
+{
+	let raw_input_devices =
+	[
+		RAWINPUTDEVICE
+		{
+			usUsagePage: 0x01,
+			usUsage: 0x02,
+			dwFlags: 0,
+			hwndTarget: std::ptr::null_mut()
+		}
+	];
+
+	let result = unsafe
+	{
+		RegisterRawInputDevices(
+			raw_input_devices.as_ptr(),
+			raw_input_devices.len() as UINT,
+			std::mem::size_of::<RAWINPUTDEVICE>() as UINT)
+	};
+	assert_eq!(result, TRUE);
 }
 
 fn win32_register_class(name: &str, style: u32) -> Vec<u16>
@@ -568,28 +699,54 @@ fn win32_register_class(name: &str, style: u32) -> Vec<u16>
 	class_name
 }
 
-unsafe extern "system" fn win32_window_proc(h_wnd: HWND, msg: UINT, w_param: WPARAM, l_param: LPARAM) -> LRESULT
+unsafe extern "system" fn win32_window_proc(hwnd: HWND, msg: UINT, wparam: WPARAM, lparam: LPARAM) -> LRESULT
 {
-	if msg == WM_DESTROY
-	{
-		PostQuitMessage(0);
-		return 0;
-	}
-	else if msg == WM_CLOSE
-	{
-		DestroyWindow(h_wnd);
-		return 0;
-	}
-	else if msg == WM_QUIT
-	{
-		return 0;
-	}
+	let window_ptr = GetWindowLongPtrW(hwnd, GWLP_USERDATA) as *mut Window;
+	let window: Option<&mut Window> = if window_ptr.is_null() { None } else { Some(&mut *window_ptr) };
 
-	return DefWindowProcW(h_wnd, msg, w_param, l_param);
+	match msg
+	{
+		WM_DESTROY =>
+		{
+			PostQuitMessage(0);
+			0
+		},
+		WM_CLOSE =>
+		{
+			DestroyWindow(hwnd);
+			0
+		},
+		WM_QUIT =>
+		{
+			0
+		},
+		WM_SYSKEYDOWN | WM_SYSKEYUP | WM_SYSCHAR =>
+		{
+			1
+		},
+		WM_ACTIVATE =>
+		{
+			if window.is_some()
+			{
+				let window = window.unwrap();
+
+				window.activated = wparam == 2;
+
+				if window.cursor_mode == CursorMode::Disabled && wparam == 2
+				{
+					window.disable_cursor();
+				}
+			}
+
+			DefWindowProcW(hwnd, msg, wparam, lparam)
+		}
+		_ => { DefWindowProcW(hwnd, msg, wparam, lparam) }
+	}
 }
 
 /* Window-specific functions */
 
+#[derive(Debug)]
 pub struct Window
 {
 	/* Public data */
@@ -605,11 +762,18 @@ pub struct Window
 	key_modifiers: KeyModifiers,
 	last_mouse_x: i32,
 	last_mouse_y: i32,
+	mouse_x: i32,
+	mouse_y: i32,
 	mouse_tracked: bool,
 	keys_current: [bool; 256],
 	keys_previous: [bool; 256],
 	mbuttons_current: [bool; 16],
 	mbuttons_previous: [bool; 16],
+	cursor_mode: CursorMode,
+	activated: bool,
+	raw_input_enable_count: u32,
+	//virtual_cursor_pos_x: i32,
+	//virtual_cursor_pos_y: i32,
 
 	/* Platform-specific data */
 	hinstance: HINSTANCE,
@@ -620,6 +784,9 @@ impl Window
 {
 	pub fn update_input_state(&mut self)
 	{
+		self.last_mouse_x = self.mouse_x;
+		self.last_mouse_y = self.mouse_y;
+
 		for i in 0..self.keys_current.len()
 		{
 			self.keys_previous[i] = self.keys_current[i];
@@ -633,6 +800,16 @@ impl Window
 
 	pub fn poll_events(&mut self) -> Option<Event>
 	{
+		static mut PTR_SET: bool = false;
+		unsafe
+		{
+			if !PTR_SET
+			{
+				SetWindowLongPtrW(self.handle, GWLP_USERDATA, self as *mut _ as *mut _ as isize);
+				PTR_SET = true;
+			}
+		}
+
 		let mut event: Option<Event> = None;
 
 		unsafe
@@ -674,17 +851,65 @@ impl Window
 					},
 					WM_MOUSEMOVE =>
 					{
-						let x: i32 = GET_X_LPARAM(msg.lParam);
-						let y: i32 = GET_Y_LPARAM(msg.lParam);
-						let xrel: i32 = x - self.last_mouse_x;
-						let yrel: i32 = y - self.last_mouse_y;
+						if self.cursor_mode == CursorMode::Normal
+						{
+							let x: i32 = GET_X_LPARAM(msg.lParam);
+							let y: i32 = GET_Y_LPARAM(msg.lParam);
+							let xrel: i32 = x - self.last_mouse_x;
+							let yrel: i32 = y - self.last_mouse_y;
 
-						self.last_mouse_x = x;
-						self.last_mouse_y = y;
+							self.last_mouse_x = self.mouse_x;
+							self.last_mouse_y = self.mouse_y;
 
-						self.mouse_tracked = true;
+							self.mouse_x = x;
+							self.mouse_y = y;
 
-						event = Some(Event::MouseMotion { x, y, xrel, yrel });
+							self.mouse_tracked = true;
+
+							event = Some(Event::MouseMotion { x, y, xrel, yrel });
+						}
+					},
+					WM_INPUT =>
+					{
+						if self.activated && self.cursor_mode == CursorMode::Disabled
+						{
+							let mut size = 0;
+							GetRawInputData(msg.lParam as HRAWINPUT, RID_INPUT, std::ptr::null_mut(),
+								&mut size, std::mem::size_of::<RAWINPUTHEADER>() as u32);
+							
+							let mut data = vec![0u8; size as usize];
+
+							GetRawInputData(
+								msg.lParam as HRAWINPUT,
+								RID_INPUT,
+								data.as_mut_ptr() as PVOID,
+								&mut size,
+								std::mem::size_of::<RAWINPUTHEADER>() as u32,
+							);
+
+							let raw_input: RAWINPUT = std::ptr::read(data.as_ptr() as *const RAWINPUT);
+
+							match raw_input.header.dwType
+							{
+								RIM_TYPEMOUSE =>
+								{
+									let mouse = raw_input.data.mouse();
+
+									if (mouse.usFlags & 0x01) == MOUSE_MOVE_RELATIVE
+									{
+										self.last_mouse_x = self.mouse_x;
+										self.last_mouse_y = self.mouse_y;
+
+										self.mouse_x += mouse.lLastX;
+										self.mouse_y += mouse.lLastY;
+
+										event = Some(Event::MouseMotion { x: self.mouse_x, y: self.mouse_y, xrel: mouse.lLastX, yrel: mouse.lLastY });
+										//dbg!(&event);
+									}
+								},
+								_ => {}
+							}
+						}
 					},
 					WM_LBUTTONDOWN =>
 					{
@@ -764,7 +989,7 @@ impl Window
 						let yscroll: f32 = (HIWORD(msg.wParam as _) as f32) / (WHEEL_DELTA as f32);
 
 						event = Some(Event::MouseScroll { x, y, xscroll, yscroll });
-					}
+					},
 					_ => {}
 				};
 
@@ -822,6 +1047,98 @@ impl Window
 		unsafe { GetCursorPos(&mut point); }
 		unsafe { ScreenToClient(self.handle, &mut point); }
 		(point.x, point.y)
+	}
+
+	pub fn set_mouse_pos(&mut self, x: i32, y: i32)
+	{
+		unsafe
+		{
+			let mut p: POINT = std::mem::zeroed();
+			ClientToScreen(self.handle, &mut p);
+			SetCursorPos(p.x + x, p.y + y);
+		}
+
+		self.mouse_x = x;
+		self.mouse_y = y;
+	}
+
+	pub fn get_mouse_delta(&self) -> (i32, i32)
+	{
+		(self.mouse_x - self.last_mouse_x, self.mouse_y - self.last_mouse_y)
+	}
+
+	fn capture_cursor(&self)
+	{
+		unsafe
+		{
+			let mut clip_rect: RECT = std::mem::zeroed();
+			GetClientRect(self.handle, &mut clip_rect);
+			{
+				let mut p = POINT { x: clip_rect.left, y: clip_rect.top };
+				ClientToScreen(self.handle, &mut p);
+				clip_rect.left = p.x;
+				clip_rect.top = p.y;
+			}
+			{
+				let mut p = POINT { x: clip_rect.right, y: clip_rect.bottom };
+				ClientToScreen(self.handle, &mut p);
+				clip_rect.right = p.x;
+				clip_rect.bottom = p.y;
+			}
+			ClipCursor(&clip_rect);
+		}
+	}
+	
+	fn release_cursor(&self)
+	{
+		unsafe { ClipCursor(std::ptr::null() as *const _); }
+	}
+
+	fn disable_cursor(&mut self)
+	{
+		unsafe { ShowCursor(0); }
+		self.set_mouse_pos((self.width) as i32 / 2, (self.height / 2) as i32);
+		self.capture_cursor();
+		win32_register_raw_input_mouse();
+	}
+
+	pub fn is_focused(&self) -> bool
+	{
+		self.handle == unsafe { GetActiveWindow() }
+	}
+
+	pub fn get_cursor_mode(&self) -> CursorMode
+	{
+		self.cursor_mode
+	}
+
+	pub fn set_cursor_mode(&mut self, mode: CursorMode)
+	{
+		match mode
+		{
+			CursorMode::Normal =>
+			{
+				if self.cursor_mode == CursorMode::Disabled
+				{
+					//self.enable_cursor();
+				}
+			},
+			CursorMode::Disabled =>
+			{
+				self.disable_cursor();
+			},
+			CursorMode::Hidden =>
+			{
+				todo!()
+			}
+		};
+
+		self.cursor_mode = mode;
+	}
+
+	pub fn show_cursor(&self, enabled: bool)
+	{
+
 	}
 
 	pub fn gl_create_context(&self, create_info: &GLContextCreateInfo) -> Result<GLContext, GLError>
@@ -1047,6 +1364,12 @@ pub fn create_window(create_info: &WindowCreateInfo) -> Window
 
 	let class_name_w = win32_register_class("my class", CS_HREDRAW | CS_VREDRAW | CS_OWNDC);
 
+	let win_error = win32_get_last_error();
+	if win_error.is_some()
+	{
+		panic!("{}", win_error.unwrap().message);
+	}
+
 	let handle: HWND = unsafe { CreateWindowExW(
 		WS_EX_APPWINDOW | WS_EX_WINDOWEDGE,
 		class_name_w.as_ptr(),
@@ -1062,15 +1385,21 @@ pub fn create_window(create_info: &WindowCreateInfo) -> Window
 		std::ptr::null_mut()
 	)};
 
+	let win_error = win32_get_last_error();
+	if win_error.is_some()
+	{
+		panic!("{}", win_error.unwrap().message);
+	}
+
 	unsafe { SetWindowPos(handle, 0 as _, x, y, 0, 0, SWP_NOSIZE); }
 
 	unsafe { ShowWindow(handle, SW_SHOW); }
 	unsafe { UpdateWindow(handle); }
 	
-	let win_error: u32 = win32_get_last_error();
-	if win_error != ERROR_SUCCESS
+	let win_error = win32_get_last_error();
+	if win_error.is_some()
 	{
-		panic!("Win32 error: {}", win_error);
+		panic!("{}", win_error.unwrap().message);
 	}
 
 	Window
@@ -1082,14 +1411,19 @@ pub fn create_window(create_info: &WindowCreateInfo) -> Window
 		key_modifiers: KeyModifiers::default(),
 		last_mouse_x: 0,
 		last_mouse_y: 0,
+		mouse_x: 0,
+		mouse_y: 0,
 		mouse_tracked: false,
 		keys_current: [false; 256],
 		keys_previous: [false; 256],
 		mbuttons_current: [false; 16],
 		mbuttons_previous: [false; 16],
 		resizable: create_info.resizable,
+		cursor_mode: CursorMode::Normal,
 		should_close: false,
 		events: Vec::new(),
+		activated: true,
+		raw_input_enable_count: 0,
 
 		hinstance,
 		handle
@@ -1209,4 +1543,19 @@ pub fn open_gamepad(index: u32) -> Result<Gamepad, GamepadError>
 pub fn vk_get_surface_extension() -> &'static str
 {
 	"VK_KHR_win32_surface"
+}
+
+pub fn get_cursor_pos() -> (i32, i32)
+{
+	unsafe
+	{
+		let mut p: POINT = std::mem::zeroed();
+		GetCursorPos(&mut p);
+		(p.x, p.y)
+	}
+}
+
+pub fn set_cursor_pos(x: i32, y: i32)
+{
+	unsafe { SetCursorPos(x, y); }
 }
